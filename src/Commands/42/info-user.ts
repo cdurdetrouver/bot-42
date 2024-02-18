@@ -140,6 +140,12 @@ export default new Command({
                 ephemeral: true,
               });
             });
+        })
+        .catch((error) => {
+          return interaction.reply({
+            content: "Wrong login for 42",
+            ephemeral: true,
+          });
         });
     });
   },
