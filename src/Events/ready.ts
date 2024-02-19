@@ -10,9 +10,9 @@ export default new Event("ready", () => {
   const channel = channels.cache.get(process.env.logchannel) as TextChannel;
 
   checkUser();
-  setInterval(() => {
-    checkUser();
-  }, 3605000);
+  // setInterval(() => {
+  //   checkUser();
+  // }, 3605000);
 
   if (channel?.isTextBased()) {
     channel.send("Restarted");

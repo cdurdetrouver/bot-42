@@ -17,21 +17,22 @@ export async function checkUser() {
 
   let intervalids = [];
   let intervalid;
-  guild.forEach((guild) => {
+  for (const guild2 of guild) {
+    await wait(2000);
     intervalid = setInterval(() => {
-      startcheck(db, guild._id);
-    }, 60000);
+      startcheck(db, guild2._id);
+    }, 120000);
     intervalids.push(intervalid);
-  });
+  }
 
-  setTimeout(() => {
-    intervalids.forEach((intervalid) => {
-      clearInterval(intervalid);
-    });
-  }, 3600000);
+  //   setTimeout(() => {
+  //     intervalids.forEach((intervalid) => {
+  //       clearInterval(intervalid);
+  //     });
+  //   }, 3600000);
 }
 
-async function getproject(id: string) {}
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function startcheck(db, _id: ObjectId) {
   const Guilds = db.collection("guild");
@@ -48,8 +49,10 @@ export async function startcheck(db, _id: ObjectId) {
     .find({ _id: { $in: userIds } })
     .toArray();
   const channel = server.channels.cache.get(guild.chanID) as TextChannel;
-  client42.credentials.getToken().then((token) => {
-    users.forEach((user) => {
+
+  for (const user of users) {
+    await wait(5000);
+    client42.credentials.getToken().then((token) => {
       return axios
         .get(`https://api.intra.42.fr/v2/users/${user.intra}`, {
           headers: {
@@ -119,7 +122,7 @@ export async function startcheck(db, _id: ObjectId) {
             });
 
           let check =
-            user.discord_id && server.members.cache.get(user.discord_id);
+            user.discord_id && server.members.cache.get(user.discord_id).id;
           channel.send({
             content: `@here ${
               check ? `<@${user.discord_id}>` : user.intra
@@ -132,5 +135,5 @@ export async function startcheck(db, _id: ObjectId) {
           console.log("error in checkuser.ts line 139");
         });
     });
-  });
+  }
 }
