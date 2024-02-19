@@ -3,7 +3,7 @@ import { EmbedBuilder, TextChannel } from "discord.js";
 import { user } from "../typings/user";
 import { ObjectId } from "mongodb";
 import axios from "axios";
-const image = require("../dico/image.json");
+const image = require("../../dico/image.json");
 
 export async function checkUser() {
   const db = clientdb.db("guild");
