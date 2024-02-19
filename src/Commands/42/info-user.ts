@@ -1,28 +1,21 @@
 import { Command } from "../../structures/Commands";
 import { ApplicationCommandOptionType, EmbedBuilder } from "discord.js";
-import ClientOAuth2 from "client-oauth2";
 import axios from "axios";
-import fs from "fs";
+import { client42 } from "../../index";
 
 export default new Command({
   name: "info-user",
-  description: "recuperer les infos sur un utilisateur 42",
+  description: "get info of a user from 42API",
   id: "1208606899302305792",
   options: [
     {
       name: "login",
-      description: "intra de l'utilisateur a checker",
+      description: "intra of user to get info from",
       type: ApplicationCommandOptionType.String,
       required: true,
     },
   ],
   run: async ({ args, interaction, client }) => {
-    const client42 = new ClientOAuth2({
-      clientId: process.env.uid42,
-      clientSecret: process.env.secret42,
-      accessTokenUri: "https://api.intra.42.fr/oauth/token",
-    });
-
     const user = args.getString("login");
 
     let coalition = "No coalition";
@@ -55,9 +48,8 @@ export default new Command({
             .then((response) => {
               let level;
               response.data.cursus_users.forEach((element) => {
-                if (element.cursus_id === 21) {
+                if (element.cursus_id === 21 || element.cursus_id === 9)
                   level = element.level + "%";
-                }
               });
               let title = "No title";
               response.data.titles_users.forEach((element, idx) => {

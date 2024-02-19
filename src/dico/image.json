@@ -1,0 +1,22 @@
+{
+  "cpp": "cppn.png",
+  "libft": "libftn.png",
+  "printf": "ft_printfn.png",
+  "get": "get_next_linen.png",
+  "cub3d": "cub3dn.png",
+  "minishell": "minishelln.png",
+  "philo": "philosophersn.png",
+  "push": "push_swapn.png",
+  "long": "so_longn.png",
+  "fdf": "fdfn.png",
+  "fract": "fract-oln.png",
+  "born2beroot": "born2berootn.png",
+  "transcendence": "ft_transcendencen.png",
+  "minirt": "minirtn.png",
+  "pipex": "pipexn.png",
+  "webserv": "webservn.png",
+  "netpractice": "netpracticen.png",
+  "minitalk": "minitalkn.png",
+  "irc": "ft_ircn.png",
+  "inception": "inceptionn.png"
+}

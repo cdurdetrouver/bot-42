@@ -6,7 +6,8 @@ declare global {
       logchannel: string;
       secret42: string;
       uid42: string;
-      environment: "prod" | "debug" | "dev";
+      mdbmdp: string;
+      mdbuser: string;
     }
   }
 }
