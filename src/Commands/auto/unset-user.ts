@@ -10,7 +10,7 @@ import {
 export default new Command({
   name: "unset-user",
   description: "Unset a user to check projects for",
-  id: "",
+  id: "1209317211773075466",
   options: [
     {
       name: "login",

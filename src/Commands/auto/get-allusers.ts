@@ -7,7 +7,7 @@ import { guild } from "../../typings/guild";
 export default new Command({
   name: "get-allusers",
   description: "Get all users to check",
-  id: "",
+  id: "1209313886293991454",
   run: async ({ interaction, client }) => {
     const db = clientdb.db("guild");
     const guilds = db.collection("guild");

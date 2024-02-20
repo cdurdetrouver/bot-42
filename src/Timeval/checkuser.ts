@@ -1,7 +1,6 @@
 import { client, client42, clientdb } from "../index";
 import { EmbedBuilder, TextChannel } from "discord.js";
 import { user } from "../typings/user";
-import { ObjectId } from "mongodb";
 import axios from "axios";
 import { guild } from "../typings/guild";
 const image = require("../../dico/image.json");

@@ -1,6 +1,6 @@
 import { Event } from "../structures/Event";
 import { client } from "../index";
-import { TextChannel } from "discord.js";
+import { TextChannel, ActivityType } from "discord.js";
 import { checkUser } from "../Timeval/checkuser";
 
 export default new Event("ready", () => {
@@ -11,6 +11,24 @@ export default new Event("ready", () => {
 
   console.log("Checking users");
   checkUser();
+
+  client.user.setPresence({
+    activities: [
+      {
+        name: "your projects",
+        type: ActivityType.Watching,
+      },
+      {
+        name: "/help",
+        type: ActivityType.Playing,
+      },
+      {
+        name: "a 42",
+        type: ActivityType.Listening,
+      },
+    ],
+    status: "dnd",
+  });
 
   if (channel?.isTextBased()) {
     channel.send("Restarted");
