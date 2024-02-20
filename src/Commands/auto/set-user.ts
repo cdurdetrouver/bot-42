@@ -62,61 +62,43 @@ export default new Command({
           const usersCollection = db.collection("user");
           const guild: guild = await guilds.findOne({
             guildID: interaction.guild.id,
+            check: true,
           });
 
           if (!guild) {
             await interaction.reply({
               content:
-                "You need to set a channel first </start:1208813421743706134>",
+                "You don't get the requirement </start:1208813421743706134>",
               ephemeral: true,
             });
             return;
           }
 
-          const userIds = guild.users;
-
-          const users: user[] = await usersCollection
-            .find({ _id: { $in: userIds } })
+          const userget: user[] = await usersCollection
+            .find({ guildid: interaction.guild.id, intra: login })
             .toArray();
-          for (const element of users) {
-            if (element.intra == login) {
+          if (!userget.length) {
+            const result = await usersCollection.insertOne({
+              intra: login,
+              discord_id: user ? user.id : null,
+              projectdate: new Date("2000-02-09T14:16:02.406Z"),
+              projectname: "undefined",
+              guildid: interaction.guild.id,
+            });
+
+            if (result.insertedCount === 0) {
               await interaction.reply({
-                content: "User already added",
+                content: "Error while adding user",
                 ephemeral: true,
               });
               return;
             }
-          }
-
-          const allusers: user[] = await usersCollection.find({}).toArray();
-          let exist = false;
-          allusers.forEach((element) => {
-            if (element.intra == login) exist = true;
-          });
-          if (!exist) {
-            const result = await usersCollection.insertOne({
-              intra: login,
-              discord_id: user ? user.id : null,
-              lastProj: new Date("2000-02-09T14:16:02.406Z"),
-            });
-
-            const newusers = guild.users;
-            newusers.push(<never>result.insertedId);
-
-            await guilds.updateOne(
-              { guildID: interaction.guild.id },
-              { $set: { users: newusers } }
-            );
           } else {
-            const user = await usersCollection.findOne({ intra: login });
-
-            const newusers = guild.users;
-            newusers.push(<never>user._id);
-
-            await guilds.updateOne(
-              { guildID: interaction.guild.id },
-              { $set: { users: newusers } }
-            );
+            await interaction.reply({
+              content: "User already added",
+              ephemeral: true,
+            });
+            return;
           }
 
           const embed = new EmbedBuilder()

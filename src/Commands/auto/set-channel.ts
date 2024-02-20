@@ -8,6 +8,7 @@ import {
   TextChannel,
 } from "discord.js";
 import { guild } from "../../typings/guild";
+import { checkPrime } from "crypto";
 
 export default new Command({
   name: "set-channel",
@@ -58,7 +59,6 @@ export default new Command({
 
     const db = clientdb.db("guild");
     const guilds = db.collection("guild");
-    const usersCollection = db.collection("user");
     const guild: guild = await guilds.findOne({
       guildID: interaction.guild.id,
     });
@@ -67,7 +67,7 @@ export default new Command({
       await guilds.insertOne({
         guildID: interaction.guild.id,
         chanID: textChannel.id,
-        users: [],
+        check: true,
       });
     } else {
       await guilds.updateOne(

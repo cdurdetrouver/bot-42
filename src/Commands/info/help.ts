@@ -25,40 +25,27 @@ export default new Command({
       color: 7462261,
     };
 
-    const directory: string[] = await globPromise(
-      `${__dirname.replaceAll("\\", "/")}/../*`
-    );
-
     const dico = {};
 
-    let commandFiles: string[][] = [];
+    let commands = await globPromise("src/Commands/**/*.ts");
+    const command2 = commands.map((value) => ({
+      [value.split("/")[2]]: value.split("/")[3].split(".")[0],
+    }));
 
-    let category: string = "";
+    command2.forEach((value) => {
+      const key = Object.keys(value)[0];
+      const path = Object.values(value)[0];
+      let command = client.commands.get(path);
 
-    let command: CommandType = null;
+      if (!dico[key]) {
+        dico[key] = [];
+      }
 
-    let dir: string = "";
-
-    for (let i = 0; i < directory.length; i++) {
-      dir = directory[i];
-
-      category = dir.replace(`${__dirname.replaceAll("\\", "/")}/../`, "");
-
-      dico[category] = [];
-
-      commandFiles.push(await globPromise(`${dir}/*{.ts,.js}`));
-
-      commandFiles[i].forEach(async (filePath) => {
-        command = client.commands.get(
-          filePath.replace(`${dir}/`, "").replace(".ts", "").replace(".js", "")
-        );
-
-        dico[category].push([
-          `</${command.name}:${command.id ? command.id : 0}>`,
-          command.description,
-        ]);
-      });
-    }
+      dico[key].push([
+        `</${command.name}:${command.id ? command.id : 0}>`,
+        command.description,
+      ]);
+    });
 
     const component = new StringSelectMenuBuilder()
       .setCustomId("help-menu")

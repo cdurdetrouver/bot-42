@@ -21,7 +21,7 @@ export default new Command({
           "https://cdn.discordapp.com/avatars/1208567625337151488/8a5b43b11d105e326a007074a7c5cff7.jpeg",
       });
 
-    const msg = await interaction.reply({
+    await interaction.reply({
       embeds: [embed],
     });
   },
