@@ -24,7 +24,7 @@ export async function checkUser() {
         await wait(500);
       }
     }
-  }, 300000);
+  }, 120000);
 }
 
 async function checkeachUser(user: user, guild: guild) {
@@ -94,7 +94,9 @@ async function checkeachUser(user: user, guild: guild) {
           })
           .setThumbnail(`${response.data.image.versions.small}`)
           .setImage(
-            `https://raw.githubusercontent.com/ayogun/42-project-badges/main/badges/${picture}`
+            `https://raw.githubusercontent.com/ayogun/42-project-badges/main/badges/${
+              last.final_mark > 100 ? picture + "m" : picture + "e"
+            }.png`
           )
           .setColor(validated ? 0x00ff00 : 0xff0000)
           .setTimestamp(date1)
