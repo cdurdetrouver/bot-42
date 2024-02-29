@@ -61,7 +61,7 @@ export default new Command({
           const guilds = db.collection("guild");
           const usersCollection = db.collection("user");
           const guild: guild = await guilds.findOne({
-            guildID: interaction.guild.id,
+            guildid: interaction.guild.id,
             check: true,
           });
 

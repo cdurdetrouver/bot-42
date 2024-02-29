@@ -16,7 +16,7 @@ export async function checkUser() {
     for (const user of users) {
       const guild: guild[] = await Guilds.find({
         check: true,
-        guildID: user.guildid,
+        guildid: user.guildid,
       }).toArray();
       if (guild[0]) {
         await checkeachUser(user, guild[0]);
@@ -39,11 +39,14 @@ async function checkeachUser(user: user, guild: guild) {
         let date1 = new Date("2000-02-09T14:16:02.406Z");
         response.data.projects_users.forEach((elem) => {
           const date2 = new Date(elem.marked_at);
-          if (
-            (elem.status === "finished" ||
-              (elem.status === "in_progress" && elem.marked_at)) &&
+          if (elem.status === "finished" && date1 < date2) {
+            last = elem;
+            date1 = date2;
+          } else if (
+            elem.status === "in_progress" &&
+            elem.marked_at &&
             date1 < date2 &&
-            date1 < date2
+            guild.check_failure == true
           ) {
             last = elem;
             date1 = date2;
@@ -64,7 +67,7 @@ async function checkeachUser(user: user, guild: guild) {
           }
         );
 
-        let picture;
+        let picture: string;
         Object.keys(image).forEach((key) => {
           const name = last.project.name
             .toLowerCase()
@@ -83,7 +86,7 @@ async function checkeachUser(user: user, guild: guild) {
             `User ${user.intra} has finished project ${last.project.name}`
           )
           .setURL(
-            `https://profile.intra.42.fr/${last.project.slug}/${response.data.login}`
+            `https://projects.intra.42.fr/projects/${last.project.slug}/projects_users/${last.id}`
           )
           .addFields({
             name: "Mark",
@@ -105,14 +108,36 @@ async function checkeachUser(user: user, guild: guild) {
               "https://cdn.discordapp.com/avatars/1208567625337151488/8a5b43b11d105e326a007074a7c5cff7.jpeg",
           });
 
-        const channel = client.channels.cache.get(guild.chanID) as TextChannel;
+        const channel = client.channels.cache.get(guild.chanid) as TextChannel;
         let check = user.discord_id;
         await channel.send({
-          content: `@here ${
-            check ? `<@${user.discord_id}>` : user.intra
-          } vient de finir un projet !${validated ? " :tada:" : ""}`,
+          content: getMessage(check, guild, validated, last.final_mark, user),
           embeds: [embed],
         });
       });
   });
+}
+
+function getMessage(
+  check: string,
+  guild: guild,
+  validated: boolean,
+  mark: number,
+  user: user
+) {
+  let message: string;
+  if (validated) {
+    message = guild.message_success
+      .replaceAll("{mention}", `<@${check}>`)
+      .replaceAll("{intra}", user.intra)
+      .replaceAll("{here}", "@here")
+      .replaceAll("{mark}", mark.toString());
+  } else {
+    message = guild.message_failure
+      .replaceAll("{mention}", `<@${check}>`)
+      .replaceAll("{intra}", user.intra)
+      .replaceAll("{here}", "@here")
+      .replaceAll("{mark}", mark.toString());
+  }
+  return message;
 }

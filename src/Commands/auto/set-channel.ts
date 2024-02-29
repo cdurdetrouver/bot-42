@@ -60,21 +60,25 @@ export default new Command({
     const db = clientdb.db("guild");
     const guilds = db.collection("guild");
     const guild: guild = await guilds.findOne({
-      guildID: interaction.guild.id,
+      guildid: interaction.guild.id,
     });
 
     if (guild === null) {
       await guilds.insertOne({
-        guildID: interaction.guild.id,
-        chanID: textChannel.id,
+        guildid: interaction.guild.id,
+        chanid: textChannel.id,
         check: true,
+        checkfailure: true,
+        message_success:
+          "{here} {mention} {intra} vient de finir un projet ! :tada:",
+        message_failure: "{intra} vient de finir un projet !",
       });
     } else {
       await guilds.updateOne(
-        { guildID: interaction.guild.id },
+        { guildid: interaction.guild.id },
         {
           $set: {
-            chanID: textChannel.id,
+            chanid: textChannel.id,
           },
         }
       );
@@ -92,7 +96,7 @@ export default new Command({
           "https://cdn.discordapp.com/avatars/1208567625337151488/8a5b43b11d105e326a007074a7c5cff7.jpeg",
       });
 
-    const msg = await interaction.reply({
+    return interaction.reply({
       embeds: [embed],
     });
   },
