@@ -114,6 +114,9 @@ async function checkeachUser(user: user, guild: guild) {
           content: getMessage(check, guild, validated, last.final_mark, user),
           embeds: [embed],
         });
+      })
+      .catch((err) => {
+        console.log(err);
       });
   });
 }

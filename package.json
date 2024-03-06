@@ -3,6 +3,9 @@
   "version": "2.1.2",
   "description": "",
   "main": "index.ts",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "ts-node src/index.ts",
     "start-dev": "ts-node-dev src/index.ts",
