@@ -3,13 +3,13 @@ import {
   Client,
   ClientEvents,
   Collection,
+  GatewayIntentBits,
 } from "discord.js";
 import { CommandType } from "../typings/Command";
-import glob from "glob";
+import { glob } from "glob";
 import { promisify } from "util";
 import { RegisterCommandsOptions } from "../typings/Client";
 import { Event } from "./Event";
-import { GatewayIntentBits } from "discord.js";
 const globPromise = promisify(glob);
 
 export class ExtendedClient extends Client {
@@ -17,11 +17,7 @@ export class ExtendedClient extends Client {
 
   constructor() {
     super({
-      intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-      ],
+      intents: [GatewayIntentBits.Guilds],
     });
   }
 
@@ -46,9 +42,9 @@ export class ExtendedClient extends Client {
   async registerModules() {
     // Commands
     const slashCommands: ApplicationCommandDataResolvable[] = [];
-    const commandFiles = await globPromise(
+    const commandFiles = (await globPromise(
       `${__dirname.replaceAll("\\", "/")}/../Commands/*/*{.ts,.js}`
-    );
+    )) as string[];
     commandFiles.forEach(async (filePath) => {
       const command: CommandType = await this.importFile(filePath);
       if (!command.name) return;
@@ -66,9 +62,9 @@ export class ExtendedClient extends Client {
     });
 
     // Event
-    const eventFiles = await globPromise(
+    const eventFiles = (await globPromise(
       `${__dirname.replaceAll("\\", "/")}/../Events/*{.ts,.js}`
-    );
+    )) as string[];
     eventFiles.forEach(async (filePath) => {
       const event: Event<keyof ClientEvents> = await this.importFile(filePath);
       this.on(event.event, event.run);
