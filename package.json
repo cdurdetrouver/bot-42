@@ -24,6 +24,7 @@
     "client-oauth2": "^4.3.3",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.4",
+    "glob": "^10.3.10",
     "mongodb": "^6.3.0"
   }
 }
