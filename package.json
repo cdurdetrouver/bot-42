@@ -3,6 +3,9 @@
   "version": "2.1.2",
   "description": "",
   "main": "index.ts",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "ts-node src/index.ts",
     "start-dev": "ts-node-dev src/index.ts",
@@ -24,7 +27,6 @@
     "client-oauth2": "^4.3.3",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.4",
-    "glob": "^10.3.10",
     "mongodb": "^6.3.0"
   }
 }
