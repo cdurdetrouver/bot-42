@@ -8,7 +8,7 @@ export default new Command({
   name: "get-allusers",
   description: "Get all users to check",
   id: "1209313886293991454",
-  run: async ({ interaction, client }) => {
+  run: async ({ interaction }) => {
     const db = clientdb.db("guild");
     const guilds = db.collection("guild");
     const usersCollection = db.collection("user");
