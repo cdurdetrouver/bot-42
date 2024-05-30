@@ -6,13 +6,15 @@ export default new Event("guildDelete", async (guild) => {
   const guildsCollection = db.collection("guild");
   const usersCollection = db.collection("user");
 
+  console.log(`Left guild: ${guild.name}`);
+
   await usersCollection.deleteMany({ guildid: guild.id }).catch((err) => {
     console.error(err);
   });
 
   await guildsCollection
-    .deleteOne({
-      guildID: guild.id,
+    .deleteMany({
+      guildid: guild.id,
     })
     .catch((err) => {
       console.error(err);

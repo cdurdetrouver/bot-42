@@ -7,12 +7,11 @@ import {
 import { promisify } from "util";
 import glob from "glob";
 const globPromise = promisify(glob);
-import { CommandType } from "../../typings/Command";
 
 export default new Command({
   name: "help",
   description: "affiche les commandes du bot",
-  id: "1208587474788556850",
+  id: "1208639691725733899",
   run: async ({ interaction, client }) => {
     // return interaction.reply({
     //     content: "En cours de création",
