@@ -10,7 +10,7 @@ const globPromise = promisify(glob);
 
 export default new Command({
   name: "help",
-  description: "affiche les commandes du bot",
+  description: "display the help menu",
   id: "1208639691725733899",
   run: async ({ interaction, client }) => {
     // return interaction.reply({
@@ -20,7 +20,7 @@ export default new Command({
 
     const embed: {} = {
       description:
-        "S'il te-plaît, sélectionne une commande pour plus d'informations",
+        "Hey, select a category to see the commands. If you need help, you can join the [support server](https://discord.gg/jmtk2qqHq2).",
       color: 7462261,
     };
 
@@ -48,13 +48,13 @@ export default new Command({
 
     const component = new StringSelectMenuBuilder()
       .setCustomId("help-menu")
-      .setPlaceholder("Séléctionne une commande");
+      .setPlaceholder("Select a category");
 
     for (let i = 0; i < Object.keys(dico).length; i++) {
       component.addOptions({
         label: Object.keys(dico)[i],
         value: Object.keys(dico)[i],
-        description: "Affiche les commandes de cette catégorie",
+        description: "Select a category to see the commands",
       });
     }
 
@@ -68,9 +68,9 @@ export default new Command({
     });
 
     let categoryEmbed = {
-      title: "Menu indisponible",
+      title: "Menu unavailable",
       color: 7462261,
-      description: "Le menu n'est plus disponible",
+      description: "The Menu is unavailable for the moment. Please retry later.",
       fields: [],
       footer: {
         text: "prefix : /",
@@ -89,8 +89,8 @@ export default new Command({
       result.deferUpdate();
       const directory: string = result.values[0];
 
-      categoryEmbed.title = `Commandes de ${directory}`;
-      categoryEmbed.description = "Voici la liste des commandes :";
+      categoryEmbed.title = `Command of ${directory}`;
+      categoryEmbed.description = "Here are the commands of the category you selected.";
       categoryEmbed.fields = [];
 
       for (let i = 0; i < dico[directory].length; i++) {

@@ -6,7 +6,7 @@ import { guild } from "../../typings/guild";
 export default new Command({
 	name: "init",
 	description: "Init the bot for this server",
-	id: "",
+	id: "1245780460425052180",
 	run: async ({ args, interaction, client }) => {
 		if (
 		!interaction.member.permissions.has(

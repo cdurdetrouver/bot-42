@@ -4,7 +4,7 @@ import { EmbedBuilder } from "discord.js";
 export default new Command({
   name: "dashboard",
   description: "Give a link to the dashboard",
-  id: "",
+  id: "1245780460425052181",
   run: async ({ interaction, client }) => {
     const embed = new EmbedBuilder()
 		.setTitle('Go to the dashboard')
