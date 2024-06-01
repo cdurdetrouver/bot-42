@@ -52,7 +52,6 @@ export async function checkUser() {
 	setInterval(async () => {
 		const firstuser = await queue.getFirstUser();
 		if (!firstuser) return;
-		console.log("check", firstuser);
 		const db = clientdb.db("guild");
 		const Guilds = db.collection("guild");
 		const guild: guild[] = await Guilds.find({
@@ -171,8 +170,6 @@ async function checkeachUser(user: user, guild: guild):Promise<user> {
 		content: getMessage(check, guild, validated, last.final_mark, user),
 		embeds: [embed],
 	});
-
-	console.log("new_user", new_user);
 
 	return new_user;
 }
