@@ -1,5 +1,5 @@
 import { client, client42, clientdb } from "../index";
-import { EmbedBuilder, ReactionUserManager, TextChannel } from "discord.js";
+import { EmbedBuilder, TextChannel } from "discord.js";
 import { user } from "../typings/user";
 import axios from "axios";
 import { guild } from "../typings/guild";
@@ -27,29 +27,38 @@ export async function checkUser() {
 	let add_users:user[] = [];
 	let remove_users:user[] = [];
 	setInterval(async () => {
-		const db = clientdb.db("guild");
-		const usersCollection = db.collection("user");
-		const Guilds = db.collection("guild");
-		const users: user[] = await usersCollection.find({}).toArray();
-		add_users = elementsInSecondNotInFirst(last_users, users);
-		for (const user of add_users) {
-			const guild: guild[] = await Guilds.find({
-				check: true,
-				guildid: user.guildid,
-			}).toArray();
-			if (guild[0] && guild[0].chanid !== "" && !isToday(user.projectdate))
-			{
-				await queue.addUser(user);
+		try {
+			const db = clientdb.db("guild");
+			const usersCollection = db.collection("user");
+			const Guilds = db.collection("guild");
+			const users: user[] = await usersCollection.find({}).toArray();
+			add_users = elementsInSecondNotInFirst(last_users, users);
+			for (const user of add_users) {
+				const guild: guild[] = await Guilds.find({
+					check: true,
+					guildid: user.guildid,
+				}).toArray();
+				if (guild[0] && guild[0].chanid !== "" && !isToday(user.projectdate))
+				{
+					await queue.addUser(user);
+				}
 			}
+			remove_users = elementsInSecondNotInFirst(users, last_users);
+			for (const user of last_users) {
+				if (isToday(user.projectdate))
+					remove_users.push(user);
+			}
+			for (const user of remove_users) {
+				await queue.removeUser(user);
+			}
+			last_users = users;
+		} catch (err) {
+			console.error(err);
 		}
-		remove_users = elementsInSecondNotInFirst(users, last_users);
-		for (const user of remove_users) {
-			await queue.removeUser(user);
-		}
-		last_users = users;
-	}, 300000);
+	}, 1000);
 
 	setInterval(async () => {
+		
 		const firstuser = await queue.getFirstUser();
 		if (!firstuser) return;
 		const db = clientdb.db("guild");
@@ -63,11 +72,12 @@ export async function checkUser() {
 			queue.rotateQueue();
 			return;
 		}
-		let user = await checkeachUser(firstuser, guild[0]).catch((err) => {
-			console.log(err);
-			return null;
-		});
-		queue.updateUser(user);
+		try {
+			let user = await checkeachUser(firstuser, guild[0]);
+			queue.updateUser(user);
+		} catch (err) {
+			console.error(err);
+		}
 		queue.rotateQueue();
 	}, 3600);
 }
@@ -184,13 +194,13 @@ function getMessage(
 	let message: string;
 	if (validated) {
 		message = guild.message_success
-			.replaceAll("{mention}", check ? `<@${check}>` : "")
+			.replaceAll("{mention}", check !== "none" ? `<@${check}>` : "")
 			.replaceAll("{intra}", user.intra)
 			.replaceAll("{here}", "@here")
 			.replaceAll("{mark}", mark.toString());
 	} else {
 		message = guild.message_failure
-			.replaceAll("{mention}", check ? `<@${check}>` : "")
+			.replaceAll("{mention}", check !== "none" ? `<@${check}>` : "")
 			.replaceAll("{intra}", user.intra)
 			.replaceAll("{here}", "@here")
 			.replaceAll("{mark}", mark.toString());
