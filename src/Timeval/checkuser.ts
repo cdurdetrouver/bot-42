@@ -47,7 +47,7 @@ export async function checkUser() {
 			await queue.removeUser(user);
 		}
 		last_users = users;
-	}, 1000);
+	}, 300000);
 
 	setInterval(async () => {
 		const firstuser = await queue.getFirstUser();
