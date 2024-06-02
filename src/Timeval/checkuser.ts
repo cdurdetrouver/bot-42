@@ -23,165 +23,185 @@ function elementsInSecondNotInFirst(firstArray: user[], secondArray: user[]): us
 
 export async function checkUser() {
 	const queue = new UserQueue();
-	let last_users:user[] = [];
-	let add_users:user[] = [];
-	let remove_users:user[] = [];
-	setInterval(async () => {
+	let last_users = [];
+	let add_users = [];
+	let remove_users = [];
+
+	const userCheckInterval = async () => {
 		try {
+			console.log("Starting user check interval");
 			const db = clientdb.db("guild");
 			const usersCollection = db.collection("user");
 			const Guilds = db.collection("guild");
-			const users: user[] = await usersCollection.find({}).toArray();
+			const users = await usersCollection.find({}).toArray();
+			console.log("Fetched users");
+
 			add_users = elementsInSecondNotInFirst(last_users, users);
+			console.log("Users to add");
 			for (const user of add_users) {
-				const guild: guild[] = await Guilds.find({
+				const guild = await Guilds.find({
 					check: true,
 					guildid: user.guildid,
 				}).toArray();
-				if (guild[0] && guild[0].chanid !== "" && !isToday(user.projectdate))
-				{
+				console.log("Fetched guild for user:", guild);
+				if (guild[0] && guild[0].chanid !== "" && !isToday(user.projectdate)) {
+					console.log("Adding user to queue:", user.intra);
 					await queue.addUser(user);
 				}
 			}
+
 			remove_users = elementsInSecondNotInFirst(users, last_users);
+			console.log("Users to remove");
 			for (const user of last_users) {
-				if (isToday(user.projectdate))
+				if (isToday(user.projectdate)) {
+					console.log("Removing user from queue:", user.intra);
 					remove_users.push(user);
+				}
 			}
 			for (const user of remove_users) {
 				await queue.removeUser(user);
 			}
 			last_users = users;
+			console.log("Updated last users");
 		} catch (err) {
-			console.error(err);
+			console.error("Error in user check interval:", err);
 		}
-	}, 60000);
+	};
 
-	setInterval(async () => {
-		
-		const firstuser = await queue.getFirstUser();
-		if (!firstuser) return;
-		const db = clientdb.db("guild");
-		const Guilds = db.collection("guild");
-		const guild: guild[] = await Guilds.find({
-			check: true,
-			guildid: firstuser.guildid,
-		}).toArray();
-		if (!guild[0] || guild[0].chanid === "" || isToday(firstuser.projectdate) )
-		{
-			queue.rotateQueue();
-			return;
-		}
+	const queueProcessInterval = async () => {
 		try {
+			console.log("Starting queue process interval");
+			if ((await queue.getSize()) === 0) return;
+			const firstuser = await queue.getFirstUser();
+			console.log("First user in queue:", firstuser.intra);
+			const db = clientdb.db("guild");
+			const Guilds = db.collection("guild");
+			const guild = await Guilds.find({
+				check: true,
+				guildid: firstuser.guildid,
+			}).toArray();
+			console.log("Fetched guild for queue processing");
+			if (!guild[0] || guild[0].chanid === "" || isToday(firstuser.projectdate)) {
+				console.log("Rotating queue");
+				queue.rotateQueue();
+				return;
+			}
 			let user = await checkeachUser(firstuser, guild[0]);
-			queue.updateUser(user);
+			console.log("Checked each user:", user);
+			await queue.updateUser(user);
+			queue.rotateQueue();
 		} catch (err) {
-			console.error(err);
+			console.error("Error in queue process interval:", err);
 		}
-		queue.rotateQueue();
-	}, 3600);
+	};
+
+	setInterval(userCheckInterval, 1000);
+	setInterval(queueProcessInterval, 3600);
 }
 
-async function checkeachUser(user: user, guild: guild):Promise<user> {
-	const token = await client42.credentials.getToken();
-	const response = await axios
-		.get(`https://api.intra.42.fr/v2/users/${user.intra}`, {
+async function checkeachUser(user: user, guild: guild): Promise<user | null> {
+	try {
+		console.log("Checking user:", user.intra);
+		const token = await client42.credentials.getToken();
+		const response = await axios.get(`https://api.intra.42.fr/v2/users/${user.intra}`, {
 			headers: {
 				Authorization: `Bearer ${token.data.access_token}`,
 			},
-		})
-		.catch((err) => {
-			console.log(err);
 		});
 
-	if (!response) return null;
-				
-	let last = null;
-	let date1 = new Date("2000-02-09T14:16:02.406Z");
-	response.data.projects_users.forEach((elem) => {
-		const date2 = new Date(elem.marked_at);
-		if (guild.check_failure === false && elem['validated?'] === false)
-			return;
-		else if (elem.status === "finished" && date1 < date2) {
-			last = elem;
-			date1 = date2;
-		} else if (
-			elem.status === "in_progress" &&
-			elem.marked &&
-			date1 < date2 &&
-			guild.check_failure
-		) {
-			last = elem;
-			date1 = date2;
-		}
-	});
+		if (!response) return null;
+		console.log("Got API response");
 
-	if (!last) return null;
-	if (user.projectdate >= date1) return null;
+		let last = null;
+		let date1 = new Date("2000-02-09T14:16:02.406Z");
+		response.data.projects_users.forEach((elem) => {
+			const date2 = new Date(elem.marked_at);
+			if (guild.check_failure === false && elem['validated?'] === false) return;
+			if (elem.status === "finished" && date1 < date2) {
+				last = elem;
+				date1 = date2;
+			} else if (
+				elem.status === "in_progress" &&
+				elem.marked &&
+				date1 < date2 &&
+				guild.check_failure
+			) {
+				last = elem;
+				date1 = date2;
+			}
+		});
 
-	const usersCollection = clientdb.db("guild").collection("user");
-	await usersCollection.updateOne(
-		{ _id: user._id },
-		{
-			$set: {
-				projectdate: date1,
-				projectname: last.project.name,
-			},
-		}
-	);
+		if (!last || user.projectdate >= date1) return null;
+		console.log("Updating user project date:", date1);
+		console.log("Gte last project:", last.project.name);
 
-	let new_user = await usersCollection.findOne({ _id: user._id });
+		const usersCollection = clientdb.db("guild").collection("user");
+		await usersCollection.updateOne(
+			{ _id: user._id },
+			{
+				$set: {
+					projectdate: date1,
+					projectname: last.project.name,
+				},
+			}
+		);
 
-	let picture: string;
-	Object.keys(image).forEach((key) => {
-		const name = last.project.name
-			.toLowerCase()
-			.replace(" ", "")
-			.replace("-", "");
-		if (name.includes(key)) {
-			picture = image[key];
-		}
-	});
+		let new_user = await usersCollection.findOne({ _id: user._id });
 
-	const validated = last["validated?"];
+		let picture: string;
+		Object.keys(image).forEach((key) => {
+			const name = last.project.name
+				.toLowerCase()
+				.replace(" ", "")
+				.replace("-", "");
+			if (name.includes(key)) {
+				picture = image[key];
+			}
+		});
 
-	const embed = new EmbedBuilder()
-		.setTitle("New project finished")
-		.setDescription(
-			`User ${user.intra} has finished project ${last.project.name}`
-		)
-		.setURL(
-			`https://projects.intra.42.fr/projects/${last.project.slug}/projects_users/${last.id}`
-		)
-		.addFields({
-			name: "Mark",
-			value: validated
+		const validated = last["validated?"];
+
+		const embed = new EmbedBuilder()
+			.setTitle("New project finished")
+			.setDescription(
+				`User ${user.intra} has finished project ${last.project.name}`
+			)
+			.setURL(
+				`https://projects.intra.42.fr/projects/${last.project.slug}/projects_users/${last.id}`
+			)
+			.addFields({
+				name: "Mark",
+				value: validated
 					? `Validated with mark of ${last.final_mark}`
-					: `Miss the project with mark of ${last.final_mark}\nbetter luck next time !`,
-		})
-		.setThumbnail(`${response.data.image.versions.small}`)
-		.setImage(
-			`https://raw.githubusercontent.com/ayogun/42-project-badges/main/badges/${
-				last.final_mark > 100 ? picture + "m" : picture + "e"
+					: `Miss the project with mark of ${last.final_mark}\nbetter luck next time!`,
+			})
+			.setThumbnail(`${response.data.image.versions.small}`)
+			.setImage(
+				`https://raw.githubusercontent.com/ayogun/42-project-badges/main/badges/${
+					last.final_mark > 100 ? picture + "m" : picture + "e"
 				}.png`
-		)
-		.setColor(validated ? 0x00ff00 : 0xff0000)
-		.setTimestamp(date1)
-		.setFooter({
-			text: "Marty",
-			iconURL:
-			"https://cdn.discordapp.com/avatars/1208567625337151488/8a5b43b11d105e326a007074a7c5cff7.jpeg",
+			)
+			.setColor(validated ? 0x00ff00 : 0xff0000)
+			.setTimestamp(date1)
+			.setFooter({
+				text: "Marty",
+				iconURL:
+					"https://cdn.discordapp.com/avatars/1208567625337151488/8a5b43b11d105e326a007074a7c5cff7.jpeg",
+			});
+
+		const channel = client.channels.cache.get(guild.chanid) as TextChannel;
+		let check = user.discord_id;
+
+		await channel.send({
+			content: getMessage(check, guild, validated, last.final_mark, user),
+			embeds: [embed],
 		});
 
-	const channel = client.channels.cache.get(guild.chanid) as TextChannel;
-	let check = user.discord_id;
-
-	await channel.send({
-		content: getMessage(check, guild, validated, last.final_mark, user),
-		embeds: [embed],
-	});
-
-	return new_user;
+		return new_user;
+	} catch (err) {
+		console.error("Error in checkeachUser function:", err);
+		return null;
+	}
 }
 
 function getMessage(
