@@ -92,7 +92,7 @@ export async function checkUser() {
     }
   };
 
-  setInterval(userCheckInterval, 1000);
+  setInterval(userCheckInterval, 120000);
   setInterval(queueProcessInterval, 3600);
 }
 
