@@ -55,7 +55,7 @@ export async function checkUser() {
 		} catch (err) {
 			console.error(err);
 		}
-	}, 1000);
+	}, 60000);
 
 	setInterval(async () => {
 		
