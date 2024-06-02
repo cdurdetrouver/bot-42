@@ -2,6 +2,9 @@ import { Event } from "../structures/Event";
 import { client } from "../index";
 import { TextChannel, ActivityType } from "discord.js";
 import { checkUser } from "../Timeval/checkuser";
+import cron from "node-cron";
+import logger from "../Logger/logger";
+import { sendLogFile } from "../Logger/sendlogfile";
 
 export default new Event("ready", () => {
   console.log("Bot is online");
@@ -11,6 +14,11 @@ export default new Event("ready", () => {
 
   console.log("Checking users");
   checkUser();
+
+  cron.schedule('0 0 * * *', () => {
+    logger.info('Running daily log file send task.');
+    sendLogFile();
+  });
 
   client.user.setPresence({
     activities: [
