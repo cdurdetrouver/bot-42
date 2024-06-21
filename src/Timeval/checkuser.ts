@@ -8,6 +8,7 @@ const image = require("../../dico/image.json");
 import logger from "../Logger/logger";
 
 function isToday(date) {
+  if (!date) return false;
   const today = new Date();
   return date.getDate() === today.getDate() &&
     date.getMonth() === today.getMonth() &&

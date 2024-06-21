@@ -20,11 +20,19 @@ export default new Event("interactionCreate", async (interaction) => {
         content: "You have used a non existent command",
         ephemeral: true,
       });
-
-    command.run({
-      args: interaction.options as CommandInteractionOptionResolver,
-      client,
-      interaction: interaction as ExtendedInteraction,
-    });
+    try {
+      command.run({
+        args: interaction.options as CommandInteractionOptionResolver,
+        client,
+        interaction: interaction as ExtendedInteraction,
+      });
+    }
+    catch (error) {
+      console.error(error);
+      return interaction.reply({
+        content: "There was an error while executing this command!",
+        ephemeral: true,
+      });
+    }
   }
 });
