@@ -53,12 +53,12 @@ export async function checkUser() {
       remove_users = elementsInSecondNotInFirst(users, last_users);
       for (const user of last_users) {
         if (isToday(user.projectdate)) {
-          logger.info(`Removing user ${user._id} from the queue`);
+          logger.info(`Removing user ${user._id} intra ${user.intra} from the queue`);
           remove_users.push(user);
         }
       }
       for (const user of remove_users) {
-        logger.info(`Removing user ${user._id} from the queue`);
+        logger.info(`Removing user ${user._id} intra ${user.intra} from the queue`);
         await queue.removeUser(user);
       }
       last_users = users;
@@ -132,7 +132,7 @@ async function checkeachUser(user: user, guild: guild): Promise<user | null> {
     });
 
     if (!last || user.projectdate >= date1) {
-      logger.info(`No new project updates for user ${user._id}`);
+      logger.info(`No new project updates for user ${user._id} intra ${user.intra}`);
       return null;
     }
 
