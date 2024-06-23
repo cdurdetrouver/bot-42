@@ -9,9 +9,13 @@ export default new Event("guildDelete", async (guild) => {
 
   logger.info(`Left guild: ${guild.name}`);
 
-    await usersCollection.deleteMany({ guildid: guild.id }).catch((err) => {
-      logger.error(err);
-    });
+    await usersCollection
+      .deleteMany({
+        guildid: guild.id
+      })
+      .catch((err) => {
+        logger.error(err);
+      });
   
     await guildsCollection
       .deleteMany({
