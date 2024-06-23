@@ -9,7 +9,7 @@ RUN npm run build
 # Production stage
 FROM node:20-slim
 WORKDIR /app
-COPY --from=builder /app/dist ./build
+COPY --from=builder /app/dist ./dist
 COPY package.json .
 RUN npm install --only=production
 
