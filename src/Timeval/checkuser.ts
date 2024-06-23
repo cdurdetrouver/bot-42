@@ -1,11 +1,12 @@
 import { client, client42, clientdb } from "../index";
-import { EmbedBuilder, TextChannel } from "discord.js";
+import { EmbedBuilder, TextChannel, User } from "discord.js";
 import { user } from "../typings/user";
 import axios from "axios";
 import { guild } from "../typings/guild";
 import { UserQueue } from "./UserQueue";
 const image = require("../../dico/image.json");
 import logger from "../Logger/logger";
+import { Db } from "mongodb";
 
 function isToday(date) {
   if (!date) return false;
@@ -23,83 +24,128 @@ function elementsInSecondNotInFirst(firstArray: user[], secondArray: user[]): us
   );
 }
 
-export async function checkUser() {
-  const queue = new UserQueue();
-  let last_users = [];
-  let add_users = [];
-  let remove_users = [];
+async function initQueue(queue: UserQueue, db:Db) {
+  try{
+    logger.info("Running init queue");
+    const usersCollection = db.collection("user");
+    const Guilds = db.collection("guild");
+    const users = await usersCollection.find({}).toArray() as user[];
+    logger.info(`Fetched ${users.length} users from the database`);
 
-  const userCheckInterval = async () => {
-    try {
-      logger.info("Running user check interval");
-      const db = clientdb.db("guild");
-      const usersCollection = db.collection("user");
-      const Guilds = db.collection("guild");
-      const users = await usersCollection.find({}).toArray();
-      logger.info(`Fetched ${users.length} users from the database`);
-
-      add_users = elementsInSecondNotInFirst(last_users, users);
-      for (const user of add_users) {
-        const guild = await Guilds.find({
-          check: true,
-          guildid: user.guildid,
-        }).toArray();
-        if (guild[0] && guild[0].chanid !== "" && !isToday(user.projectdate)) {
-          logger.info(`Adding user ${user._id} to the queue`);
-          await queue.addUser(user);
-        }
-      }
-
-      remove_users = elementsInSecondNotInFirst(users, last_users);
-      for (const user of last_users) {
-        if (isToday(user.projectdate)) {
-          logger.info(`Removing user ${user._id} intra ${user.intra} from the queue`);
-          remove_users.push(user);
-        }
-      }
-      for (const user of remove_users) {
-        logger.info(`Removing user ${user._id} intra ${user.intra} from the queue`);
-        await queue.removeUser(user);
-      }
-      last_users = users;
-    } catch (err) {
-      logger.error("Error in user check interval:", err);
-    }
-  };
-
-  const queueProcessInterval = async () => {
-    try {
-      logger.info("Running queue process interval");
-      if ((await queue.getSize()) === 0) return;
-      const firstuser = await queue.getFirstUser();
-      const db = clientdb.db("guild");
-      const Guilds = db.collection("guild");
+    for (const user of users) {
       const guild = await Guilds.find({
         check: true,
-        guildid: firstuser.guildid,
+        guildid: user.guildid,
       }).toArray();
-      if (!guild[0] || guild[0].chanid === "" || isToday(firstuser.projectdate)) {
-        logger.info(`Rotating queue for user ${firstuser._id}`);
-        queue.rotateQueue();
-        return;
+      if (guild[0] && guild[0].chanid !== "" && !isToday(user.projectdate)) {
+        logger.info(`Adding user ${user._id} intra ${user.intra} to the queue`);
+        await queue.addUser(user);
       }
-      let user = await checkeachUser(firstuser, guild[0]);
-      if (user) {
-        await queue.updateUser(user);
-      }
-      queue.rotateQueue();
-    } catch (err) {
-      logger.error("Error in queue process interval:", err);
     }
-  };
+  } catch (err) {
+    logger.error("Error in init", err);
+  }
+}
 
-  setInterval(userCheckInterval, 120000);
-  setInterval(queueProcessInterval, 3600);
+async function updateQueue(queue: UserQueue, db: Db) {
+  try {
+    logger.info("Running update queue");
+    const usersCollection = db.collection("user");
+    const Guilds = db.collection("guild");
+    const users = await usersCollection.find({}).toArray() as user[];
+    logger.info(`Fetched ${users.length} users from the database`);
+
+    const actual_users = await queue.getQueue();
+
+    const add_users = elementsInSecondNotInFirst(actual_users, users);
+    for (const user of add_users) {
+      const guild = await Guilds.find({
+        check: true,
+        guildid: user.guildid,
+      }).toArray();
+      if (guild[0] && guild[0].chanid !== "" && !isToday(user.projectdate)) {
+        logger.info(`Adding user ${user._id} intra ${user.intra} to the queue`);
+        await queue.addUser(user);
+      }
+    }
+
+    const remove_users = elementsInSecondNotInFirst(users, actual_users);
+    for (const user of remove_users) {
+      logger.info(`Removing user ${user._id} intra ${user.intra} from the queue`);
+      await queue.removeUser(user);
+    }
+  } catch (err) {
+    logger.error("Error in update", err);
+  }
+}
+
+export async function checkUser() {
+  try {
+    const queue = new UserQueue();
+    const db:Db = clientdb.db("guild");
+    const usersCollection = db.collection("user");
+
+    initQueue(queue, db);
+    usersCollection.watch().on("change", async () => {
+      try {
+        await updateQueue(queue, db);
+      } catch (error) {
+        logger.error("Error updating queue:", error);
+      }
+    });
+
+    queueProcessInterval(queue, db);
+  } catch (error) {
+    logger.error("Error in checkUser function:", error);
+    let channel = client.channels.cache.get(process.env.logchannel) as TextChannel;
+    if (channel) {
+      channel.send("Error in checkUser function: " + error);
+    }
+  }
+}
+
+async function queueProcessInterval(queue:UserQueue, db: Db)
+{
+  try {
+    logger.info("Running queue process interval");
+    if ((await queue.getSize()) === 0) return;
+
+    let firstUser = await queue.getFirstUser();
+    const Guilds = db.collection("guild");
+
+    let guild = await Guilds.findOne({
+      check: true,
+      guildid: firstUser.guildid,
+    }) as guild;
+
+    while (!guild || guild.chanid === "" || isToday(firstUser.projectdate)) {
+      logger.info(`Rotating queue for user ${firstUser._id} intra ${firstUser.intra}`);
+      await queue.rotateQueue();
+      firstUser = await queue.getFirstUser();
+      if (!firstUser) return;
+      guild = await Guilds.findOne({
+        check: true,
+        guildid: firstUser.guildid,
+      }) as guild;
+
+      if ((await queue.getSize()) === 0) return;
+    }
+
+    let user = await checkeachUser(firstUser, guild);
+    if (user) {
+      await queue.updateUser(user);
+    }
+    queue.rotateQueue();
+  } catch (err) {
+    logger.error("Error in queue process interval:", err);
+  } finally {
+    setTimeout(() => queueProcessInterval(queue, db), 3600);
+  }
 }
 
 async function checkeachUser(user: user, guild: guild): Promise<user | null> {
   try {
-    logger.info(`Checking user ${user._id}`);
+    logger.info(`Checking user ${user._id} intra ${user.intra} for new projects`);
     const token = await client42.credentials.getToken();
     const response = await axios.get(`https://api.intra.42.fr/v2/users/${user.intra}`, {
       headers: {
@@ -108,7 +154,7 @@ async function checkeachUser(user: user, guild: guild): Promise<user | null> {
     });
 
     if (!response) {
-      logger.warn(`No response for user ${user._id}`);
+      logger.warn(`No response for user ${user._id} intra ${user.intra}`);
       return null;
     }
 
@@ -145,10 +191,12 @@ async function checkeachUser(user: user, guild: guild): Promise<user | null> {
           projectname: last.project.name,
         },
       }
-    );
-    logger.info(`Updated user ${user._id} with new project ${last.project.name}`);
+    ).catch((err) => {
+      logger.error(err);
+    });
+    logger.info(`Updated user ${user._id} intra ${user.intra} with new project ${last.project.name}`);
 
-    let new_user = await usersCollection.findOne({ _id: user._id });
+    let new_user = await usersCollection.findOne({ _id: user._id }) as user;
 
     let picture: string;
     Object.keys(image).forEach((key) => {
@@ -199,7 +247,7 @@ async function checkeachUser(user: user, guild: guild): Promise<user | null> {
       embeds: [embed],
     });
 
-    logger.info(`Sent project update message for user ${user._id}`);
+    logger.info(`Sent project update message for user ${user._id} intra ${user.intra}`);
 
     return new_user;
   } catch (err) {

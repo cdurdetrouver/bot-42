@@ -63,4 +63,10 @@ export class UserQueue {
 			}
 		});
 	}
+
+	async getQueue(): Promise<user[]> {
+		return await this.mutex.runExclusive(() => {
+			return this.queue;
+		});
+	}
 }
