@@ -1,23 +1,19 @@
-# Use an official Node.js runtime as the base image
-FROM node:20
-
-# Set the working directory in the container to /app
+# Build stage
+FROM node:20 AS builder
 WORKDIR /app
-
-# Copy package.json and package-lock.json into the directory
-COPY package.json .
-
-# Install the application dependencies
+COPY package.json package-lock.json ./
 RUN npm install
-
-# Copy the rest of the application code into the container
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Expose port 3000 for the application
-EXPOSE 3000
+# Production stage
+FROM node:20-slim
+WORKDIR /app
+COPY --from=builder /app/build ./build
+COPY package.json package-lock.json ./
+RUN npm install --only=production
 
-# Define the command to run the application
-CMD ["npm","run", "start-prod"]
+# Switch to 'node' user
+USER node
+
+CMD ["npm", "run", "start-prod"]
