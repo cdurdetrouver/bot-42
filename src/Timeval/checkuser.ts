@@ -113,7 +113,7 @@ async function queueProcessInterval(queue:UserQueue, db: Db)
     let firstUser = await queue.getFirstUser();
     const Guilds = db.collection("guild");
 
-    let guild:guild = await Guilds.findOne({
+    let guild = await Guilds.findOne({
       check: true,
       guildid: firstUser.guildid,
     }) as guild;

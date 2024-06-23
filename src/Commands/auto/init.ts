@@ -24,7 +24,7 @@ export default new Command({
 		const guilds = db.collection("guild");
 		const guild: guild = await guilds.findOne({
 		guildid: interaction.guild.id,
-		}) as guild;
+		});
 
 		if (guild === null) {
 			await guilds.insertOne({
