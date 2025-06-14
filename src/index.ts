@@ -5,7 +5,7 @@ import ClientOAuth2 from "client-oauth2";
 export const client = new ExtendedClient();
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const uri = `mongodb+srv://${process.env.mdbuser}:${process.env.mdbmdp}@bot-42.qxgaebq.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.mdbuser}:${process.env.mdbmdp}@${process.env.mdblink}/?retryWrites=true&w=majority`;
 
 export const clientdb = new MongoClient(uri, {
   serverApi: {
